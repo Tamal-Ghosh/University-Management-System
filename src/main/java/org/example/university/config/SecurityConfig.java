@@ -1,6 +1,5 @@
 package org.example.university.config;
 
-import jakarta.servlet.http.HttpServletResponse;
 import org.example.university.security.AuthTokenFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,6 +13,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import jakarta.servlet.http.HttpServletResponse;
 
 @Configuration
 @EnableWebSecurity
@@ -55,15 +56,15 @@ public class SecurityConfig {
                         })
                 )
                 .authorizeHttpRequests(auth -> auth
-                        // Public Endpoints & Static Web Resources
+                       
                         .requestMatchers("/", "/index.html", "/static/**", "/*.html", "/*.css", "/*.js", "/favicon.ico", "/api/auth/**", "/h2-console/**").permitAll()
-                        // Admin Endpoints: Only ADMIN can access
+                        
                         .requestMatchers("/api/admins/**").hasRole("ADMIN")
-                        // Teacher Endpoints: ADMIN and TEACHER can access
+                        
                         .requestMatchers("/api/teachers/**").hasAnyRole("ADMIN", "TEACHER")
-                        // Student Endpoints: ADMIN and STUDENT can access
+                        
                         .requestMatchers("/api/students/**").hasAnyRole("ADMIN", "STUDENT")
-                        // All other endpoints require authentication
+                        
                         .anyRequest().authenticated()
                 );
 
