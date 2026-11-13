@@ -111,3 +111,27 @@ The database automatically seeds the following initial accounts on startup:
 
 ## 📜 License
 This project is open-source and available under the [MIT License](LICENSE).
+
+
+## Unit tests and CI
+
+Run the six Mockito unit tests (Java 21 required):
+
+```powershell
+.\mvnw.cmd --batch-mode --no-transfer-progress -Dtest=RolePermissionsTest clean test
+```
+
+On Linux/macOS: `bash ./mvnw --batch-mode --no-transfer-progress -Dtest=RolePermissionsTest clean test`.
+
+`RolePermissionsTest` covers student self-edit, rejecting another student's edits
+and password changes, teacher edits to students and self, rejecting another
+teacher's edits, and admin edits to teacher profiles. Dependencies are mocked;
+no Spring context, database, PostgreSQL, or Docker is required.
+
+The explicit `-Dtest=RolePermissionsTest` selector runs exactly these six tests.
+The existing `UniversityApplicationTests` context smoke test is unchanged and is
+not included in this unit-only stage. Integration tests will be added separately.
+
+`.github/workflows/tests.yml` runs these six tests on every push and pull request.
+It uses Java 21, caches Maven dependencies, and uploads Surefire reports even when
+tests fail. View results in the repository's Actions tab.
