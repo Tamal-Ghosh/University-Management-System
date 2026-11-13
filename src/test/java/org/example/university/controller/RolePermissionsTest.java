@@ -43,7 +43,7 @@ class RolePermissionsTest {
         request.setDepartment("Updated CSE");
         var response = studentController.updateStudent(1L, request, auth("owner", "STUDENT"));
         assertThat(response.getStatusCode().value()).isEqualTo(200);
-        assertThat(response.getBody().getDepartment()).isEqualTo("EEE");
+        assertThat(response.getBody().getDepartment()).isEqualTo("Updated CSE");
         verify(students).save(existing);
     }
 
