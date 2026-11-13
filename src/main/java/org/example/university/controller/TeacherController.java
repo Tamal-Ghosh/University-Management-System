@@ -9,6 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -48,6 +50,7 @@ public class TeacherController {
 
     // 3. Create a new teacher
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Teacher> createTeacher(@RequestBody Teacher teacherRequest) {
         if (teacherRequest.getUser() == null ||
                 !StringUtils.hasText(teacherRequest.getUser().getUsername()) ||
@@ -75,9 +78,15 @@ public class TeacherController {
 
     // 4. Update teacher
     @PutMapping("/{id}")
-    public ResponseEntity<Teacher> updateTeacher(@PathVariable Long id, @RequestBody Teacher teacherRequest) {
+    public ResponseEntity<Teacher> updateTeacher(@PathVariable Long id, @RequestBody Teacher teacherRequest, Authentication authentication) {
         Teacher existingTeacher = teacherRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Teacher not found with id: " + id));
+
+        boolean canManage = authentication.getAuthorities().stream()
+                .anyMatch(authority -> java.util.Set.of("ROLE_ADMIN").contains(authority.getAuthority()));
+        if (!canManage && !existingTeacher.getUser().getUsername().equals(authentication.getName())) {
+            throw new AccessDeniedException("You can only edit your own profile");
+        }
 
         if (StringUtils.hasText(teacherRequest.getDepartment())) {
             existingTeacher.setDepartment(teacherRequest.getDepartment());
@@ -102,6 +111,7 @@ public class TeacherController {
 
     // 5. Delete teacher
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteTeacher(@PathVariable Long id) {
         Teacher existingTeacher = teacherRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Teacher not found with id: " + id));

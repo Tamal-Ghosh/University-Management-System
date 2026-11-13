@@ -9,6 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -17,7 +19,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/students")
-@PreAuthorize("hasAnyRole('ADMIN', 'STUDENT')")
+@PreAuthorize("hasAnyRole('ADMIN', 'TEACHER', 'STUDENT')")
 public class StudentController {
 
     private final StudentRepository studentRepository;
@@ -48,6 +50,7 @@ public class StudentController {
 
     // 3. Create a new student
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     public ResponseEntity<Student> createStudent(@RequestBody Student studentRequest) {
         if (studentRequest.getUser() == null ||
                 !StringUtils.hasText(studentRequest.getUser().getUsername()) ||
@@ -83,9 +86,15 @@ public class StudentController {
 
     // 4. Update student
     @PutMapping("/{id}")
-    public ResponseEntity<Student> updateStudent(@PathVariable Long id, @RequestBody Student studentRequest) {
+    public ResponseEntity<Student> updateStudent(@PathVariable Long id, @RequestBody Student studentRequest, Authentication authentication) {
         Student existingStudent = studentRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Student not found with id: " + id));
+
+        boolean canManage = authentication.getAuthorities().stream()
+                .anyMatch(authority -> java.util.Set.of("ROLE_ADMIN", "ROLE_TEACHER").contains(authority.getAuthority()));
+        if (!canManage && !existingStudent.getUser().getUsername().equals(authentication.getName())) {
+            throw new AccessDeniedException("You can only edit your own profile");
+        }
 
         if (StringUtils.hasText(studentRequest.getDepartment())) {
             existingStudent.setDepartment(studentRequest.getDepartment());
@@ -113,6 +122,7 @@ public class StudentController {
 
     // 5. Delete student
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     public ResponseEntity<Void> deleteStudent(@PathVariable Long id) {
         Student existingStudent = studentRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Student not found with id: " + id));
