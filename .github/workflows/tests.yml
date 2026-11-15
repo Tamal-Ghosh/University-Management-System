@@ -1,4 +1,4 @@
-name: University unit tests
+name: University tests
 
 on:
   push:
@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   tests:
-    name: Unit tests (Java 21)
+    name: Unit and integration tests (Java 21)
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -24,14 +24,16 @@ jobs:
           java-version: '21'
           cache: maven
 
-      - name: Run six unit tests
-        run: bash ./mvnw --batch-mode --no-transfer-progress -Dtest=RolePermissionsTest clean test
+      - name: Run unit and integration tests
+        run: bash ./mvnw --batch-mode --no-transfer-progress clean verify
 
       - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: test-reports
-          path: target/surefire-reports/
+          path: |
+            target/surefire-reports/
+            target/failsafe-reports/
           if-no-files-found: warn
           retention-days: 14

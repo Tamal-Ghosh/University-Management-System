@@ -113,25 +113,35 @@ The database automatically seeds the following initial accounts on startup:
 This project is open-source and available under the [MIT License](LICENSE).
 
 
-## Unit tests and CI
+## Automated tests and CI
 
-Run the six Mockito unit tests (Java 21 required):
+Run the complete suite (Java 21 required):
 
 ```powershell
-.\mvnw.cmd --batch-mode --no-transfer-progress -Dtest=RolePermissionsTest clean test
+.\mvnw.cmd --batch-mode --no-transfer-progress clean verify
 ```
 
-On Linux/macOS: `bash ./mvnw --batch-mode --no-transfer-progress -Dtest=RolePermissionsTest clean test`.
+On Linux/macOS: `bash ./mvnw --batch-mode --no-transfer-progress clean verify`.
 
-`RolePermissionsTest` covers student self-edit, rejecting another student's edits
-and password changes, teacher edits to students and self, rejecting another
-teacher's edits, and admin edits to teacher profiles. Dependencies are mocked;
-no Spring context, database, PostgreSQL, or Docker is required.
+The suite includes **6 new unit tests**, **3 new integration tests**, and the existing
+application context test (**10 tests total**). `mvnw test` runs unit/context tests;
+`mvnw verify` also runs integration tests through Maven Failsafe.
 
-The explicit `-Dtest=RolePermissionsTest` selector runs exactly these six tests.
-The existing `UniversityApplicationTests` context smoke test is unchanged and is
-not included in this unit-only stage. Integration tests will be added separately.
+| Test class | Count | Coverage |
+| --- | --- | --- |
+| `RolePermissionsTest` | 6 | Student self-edit; blocking other-student edits/password changes; teacher editing students and self; blocking other-teacher edits; admin editing teachers. Dependencies are mocked with Mockito. |
+| `UniversityApiIT` | 3 | Real login/JWT and rejected credentials; admin student CRUD with password hashing; student/teacher/admin edit permissions with unchanged records after rejected requests. Full Spring Boot, MockMvc, security filters, JPA, and H2 are used. |
+| `UniversityApplicationTests` | 1 | Existing application context smoke test. |
 
-`.github/workflows/tests.yml` runs these six tests on every push and pull request.
-It uses Java 21, caches Maven dependencies, and uploads Surefire reports even when
-tests fail. View results in the repository's Actions tab.
+Spring tests explicitly use the `test` profile and an isolated in-memory H2 database.
+Integration fixtures are created per test and rolled back, so PostgreSQL, Docker,
+and default seeded login credentials are not required.
+
+`.github/workflows/tests.yml` runs `clean verify` on every push and pull request,
+and supports manual runs after the workflow reaches the default branch.
+The workflow uses Java 21, caches Maven dependencies, and uploads Surefire/Failsafe
+reports even when tests fail. Open the repository's **Actions** tab to see results.
+
+Action configuration references: [checkout](https://github.com/actions/checkout),
+[setup-java](https://github.com/actions/setup-java), and
+[upload-artifact](https://github.com/actions/upload-artifact).
